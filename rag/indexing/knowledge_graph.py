@@ -144,11 +144,14 @@ def graph_traverse(entity_name: str, relation: str = None, max_depth: int = 2) -
 
     返回: [{"node_id": ..., "type": ..., "label": ..., "relation": ..., "distance": ...}]
     """
+    if not entity_name or not entity_name.strip():
+        return []
+
     G = get_kg()
 
     # 查找起始节点（模糊匹配）
     start_nodes = []
-    entity_lower = entity_name.lower()
+    entity_lower = entity_name.lower().strip()
     for node_id, data in G.nodes(data=True):
         label = data.get("label", "").lower()
         if entity_lower in label or entity_lower in node_id.lower():

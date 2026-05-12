@@ -16,10 +16,13 @@ Available specialist agents:
 - retrieval_agent: Search course materials (lectures, exams, solutions, review notes)
 - concept_agent: Explain concepts, theories, and definitions
 - calc_agent: Solve calculation problems step-by-step
+- exam_agent: Generate practice exam questions or grade student answers
 
 Routing rules:
 - Conceptual questions ("what is", "explain", "describe", "compare") → retrieval_agent first, then concept_agent
 - Calculation questions ("calculate", "compute", "solve", "find", "determine", "算", "求", "推导") → retrieval_agent first, then calc_agent
+- Exam generation ("出题", "出卷", "模拟题", "给我出", "generate exam", "practice questions", "mock exam") → exam_agent
+- Exam grading ("批改", "改卷", "grade", "check my answer") → retrieval_agent first (to find reference answers), then route to exam_agent
 - Factual lookup ("which year", "which lecture", "formula for") → retrieval_agent only
 - Simple chat / greeting → respond directly (no specialist agent needed)
 
