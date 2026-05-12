@@ -128,3 +128,54 @@ def docs_to_context(docs_with_scores: List[tuple], max_tokens: int = 8000) -> st
         parts.append(block)
         est += e
     return "\n---\n".join(parts)
+
+
+def do_graph_traverse(entity: str, max_depth: int = 2) -> str:
+    """知识图谱游走：从概念出发找关联的公式、考题、课件"""
+    from rag.indexing.knowledge_graph import graph_traverse
+    results = graph_traverse(entity, max_depth=max_depth)
+
+    if not results:
+        return f"No graph results for '{entity}'"
+
+    lines = [f"Knowledge Graph results for '{entity}':"]
+    for r in results:
+        line = f"  [{r['type']}] {r['label']} (distance={r['distance']}"
+        if r.get('relation'):
+            line += f", relation={r['relation']}"
+        line += ")"
+        if r.get('expression'):
+            line += f"\n    Expression: {r['expression']}"
+        if r.get('year'):
+            line += f"\n    Year: {r['year']}"
+        lines.append(line)
+
+    return "\n".join(lines)
+
+
+def do_kg_enhanced_search(query: str) -> List[tuple]:
+    """知识图谱增强检索：常规混合搜索 + 图游走补充"""
+    # 常规搜索
+    fused = do_hybrid_search(query)
+    docs = [doc for doc, _ in fused]
+
+    # 图游走：从 query 提取可能的概念
+    concepts = ["shape factor", "buckling", "stiffness matrix", "rational design",
+                "plastic design", "plate buckling", "hull girder", "stiffened panel",
+                "column buckling", "effective width", "faulkner", "grillage",
+                "ultimate strength", "vibration"]
+
+    from rag.indexing.knowledge_graph import graph_traverse
+    for concept in concepts:
+        if concept in query.lower():
+            kg_results = graph_traverse(concept, max_depth=2)
+            # 从图结果中找到对应的考题和课件，额外搜索
+            for r in kg_results:
+                if r['type'] == 'ExamQuestion' and r.get('year'):
+                    extra_query = f"{r['year']} {r['label']}"
+                    extra_fused = do_hybrid_search(extra_query, source_type="exam")
+                    for doc, score in extra_fused[:2]:
+                        docs.append(doc)
+            break  # 只游走第一个匹配概念
+
+    return [(doc, 1.0) for doc in docs]
