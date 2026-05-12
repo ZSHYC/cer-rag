@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marine Structures AI Tutor — Agentic RAG System</title>
+<style>
+:root {
+  --bg-deep: #060d1a;
+  --bg-card: #0a1628;
+  --bg-card-hover: #0d1d36;
+  --cyan: #00d4ff;
+  --cyan-dim: rgba(0,212,255,0.12);
+  --cyan-glow: rgba(0,212,255,0.25);
+  --gold: #ffb347;
+  --gold-dim: rgba(255,179,71,0.12);
+  --text: #e2e8f0;
+  --text-dim: #8899aa;
+  --text-muted: #556677;
+  --border: rgba(255,255,255,0.06);
+  --radius: 12px;
+  --radius-lg: 20px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+  --mono: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { background:var(--bg-deep); color:var(--text); font-family:var(--font); line-height:1.6; overflow-x:hidden; }
+
+/* ── Navigation ── */
+nav { position:fixed; top:0; left:0; right:0; z-index:100; backdrop-filter:blur(20px) saturate(180%);
+  background:rgba(6,13,26,0.85); border-bottom:1px solid var(--border); padding:0 2rem; }
+nav .nav-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; height:56px; justify-content:space-between; }
+nav .logo { font-weight:700; font-size:1rem; color:var(--cyan); letter-spacing:-0.3px; }
+nav .logo span { color:var(--text-dim); font-weight:400; margin-left:6px; }
+nav a { color:var(--text-dim); text-decoration:none; font-size:0.85rem; margin-left:2rem; transition:color .2s; }
+nav a:hover { color:var(--cyan); }
+
+/* ── Hero ── */
+.hero { min-height:100vh; display:flex; align-items:center; justify-content:center; text-align:center;
+  padding:6rem 2rem 4rem; position:relative; overflow:hidden; }
+.hero::before { content:""; position:absolute; inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% 30%, rgba(0,212,255,0.06) 0%, transparent 60%),
+             radial-gradient(ellipse 60% 50% at 20% 80%, rgba(255,179,71,0.04) 0%, transparent 60%); }
+.hero .hero-content { position:relative; z-index:1; max-width:900px; }
+.hero .badge { display:inline-flex; align-items:center; gap:8px; background:var(--cyan-dim); border:1px solid rgba(0,212,255,0.15);
+  color:var(--cyan); padding:6px 18px; border-radius:100px; font-size:0.82rem; font-weight:500; margin-bottom:2rem; }
+.hero .badge .dot { width:7px; height:7px; background:var(--cyan); border-radius:50%; animation:pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.hero h1 { font-size:clamp(2.4rem,6vw,4.5rem); font-weight:800; line-height:1.1; letter-spacing:-1.5px; margin-bottom:1.5rem; }
+.hero h1 .gradient { background:linear-gradient(135deg, var(--cyan) 0%, #7dd3fc 40%, var(--gold) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.hero .subtitle { font-size:1.25rem; color:var(--text-dim); max-width:650px; margin:0 auto 2.5rem; line-height:1.7; }
+.hero .cta-row { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+.btn { display:inline-flex; align-items:center; gap:8px; padding:12px 28px; border-radius:100px; font-size:0.95rem;
+  font-weight:600; cursor:pointer; transition:all .25s; text-decoration:none; border:none; }
+.btn-primary { background:var(--cyan); color:var(--bg-deep); }
+.btn-primary:hover { background:#33dfff; transform:translateY(-1px); box-shadow:0 8px 30px var(--cyan-glow); }
+.btn-outline { background:transparent; border:1px solid rgba(255,255,255,0.15); color:var(--text); }
+.btn-outline:hover { border-color:var(--cyan); color:var(--cyan); }
+
+/* ── Section Common ── */
+section { padding:6rem 2rem; }
+.section-inner { max-width:1100px; margin:0 auto; }
+.section-label { display:inline-block; font-family:var(--mono); font-size:0.75rem; color:var(--cyan); text-transform:uppercase;
+  letter-spacing:2px; margin-bottom:1rem; }
+.section-title { font-size:clamp(1.8rem,3.5vw,2.8rem); font-weight:700; letter-spacing:-0.8px; margin-bottom:1rem; }
+.section-desc { color:var(--text-dim); font-size:1.1rem; max-width:600px; margin-bottom:3rem; line-height:1.7; }
+
+/* ── RAG Evolution ── */
+.evo-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+.evo-item { background:var(--bg-card); padding:2rem 1.5rem; text-align:center; position:relative; }
+.evo-item .stage { font-family:var(--mono); font-size:0.7rem; color:var(--cyan); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:0.75rem; }
+.evo-item .arch { font-family:var(--mono); font-size:0.8rem; color:var(--text); margin-bottom:0.5rem; }
+.evo-item .innov { font-size:0.8rem; color:var(--text-dim); line-height:1.5; }
+.evo-item .arrow { display:none; }
+@media(max-width:768px){ .evo-grid{grid-template-columns:1fr} .evo-item{padding:1.5rem} }
+
+/* ── Architecture Viz ── */
+.arch-viz { background:var(--bg-card); border-radius:var(--radius-lg); border:1px solid var(--border); overflow:hidden; }
+.arch-row { display:flex; align-items:center; justify-content:center; gap:1rem; padding:1.5rem 2rem; flex-wrap:wrap; }
+.arch-row + .arch-row { border-top:1px solid var(--border); }
+.arch-label { font-family:var(--mono); font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px;
+  writing-mode:vertical-lr; margin-right:1rem; }
+@media(max-width:768px){ .arch-row{gap:0.5rem;padding:1rem} }
+
+.agent-node { background:var(--bg-card-hover); border:1px solid var(--border); border-radius:var(--radius);
+  padding:0.85rem 1.2rem; text-align:center; min-width:110px; transition:all .3s; }
+.agent-node:hover { border-color:var(--cyan); box-shadow:0 0 20px var(--cyan-dim); transform:translateY(-2px); }
+.agent-node .icon { font-size:1.3rem; margin-bottom:0.3rem; }
+.agent-node .name { font-weight:600; font-size:0.85rem; }
+.agent-node .role { font-size:0.7rem; color:var(--text-dim); margin-top:2px; }
+.agent-node.supervisor { border-color:var(--gold); background:var(--gold-dim); }
+.agent-node.supervisor .name { color:var(--gold); }
+
+.arch-arrow { color:var(--text-muted); font-size:0.8rem; }
+.arch-layer { background:rgba(0,212,255,0.03); border:1px dashed rgba(0,212,255,0.1); border-radius:var(--radius);
+  padding:1rem 2rem; text-align:center; }
+.arch-layer .title { font-family:var(--mono); font-size:0.7rem; color:var(--cyan); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:0.5rem; }
+.arch-layer .items { font-size:0.82rem; color:var(--text-dim); }
+
+/* ── Features Grid ── */
+.features { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.5rem; }
+.feature-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg);
+  padding:2rem; transition:all .3s; position:relative; overflow:hidden; }
+.feature-card::before { content:""; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, transparent, var(--cyan), transparent); opacity:0; transition:opacity .3s; }
+.feature-card:hover { border-color:rgba(0,212,255,0.2); transform:translateY(-4px); box-shadow:0 20px 50px rgba(0,0,0,0.3); }
+.feature-card:hover::before { opacity:1; }
+.feature-card .f-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  font-size:1.2rem; margin-bottom:1.2rem; }
+.feature-card .f-icon.cyan { background:var(--cyan-dim); color:var(--cyan); }
+.feature-card .f-icon.gold { background:var(--gold-dim); color:var(--gold); }
+.feature-card h3 { font-size:1.1rem; margin-bottom:0.6rem; letter-spacing:-0.3px; }
+.feature-card p { font-size:0.88rem; color:var(--text-dim); line-height:1.65; }
+
+/* ── Tech Stack ── */
+.tech-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; }
+.tech-item { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:1.2rem; text-align:center; transition:all .25s; }
+.tech-item:hover { border-color:var(--cyan); background:var(--bg-card-hover); }
+.tech-item .t-name { font-weight:600; font-size:0.88rem; margin-bottom:0.3rem; }
+.tech-item .t-why { font-size:0.73rem; color:var(--text-dim); line-height:1.5; }
+
+/* ── Data Pipeline ── */
+.data-table { width:100%; border-collapse:collapse; }
+.data-table th { text-align:left; font-family:var(--mono); font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;
+  letter-spacing:1.5px; padding:0.8rem 1rem; border-bottom:1px solid var(--border); }
+.data-table td { padding:1rem; border-bottom:1px solid var(--border); font-size:0.88rem; }
+.data-table tr:hover td { background:rgba(0,212,255,0.02); }
+.data-table .num { font-family:var(--mono); color:var(--cyan); font-weight:600; }
+
+/* ── Iteration Timeline ── */
+.timeline { position:relative; padding-left:2rem; }
+.timeline::before { content:""; position:absolute; left:8px; top:0; bottom:0; width:2px; background:var(--border); }
+.tl-item { position:relative; margin-bottom:2.5rem; padding-left:2rem; }
+.tl-item::before { content:""; position:absolute; left:-2rem; top:4px; width:18px; height:18px; border-radius:50%;
+  background:var(--bg-deep); border:2px solid var(--cyan); }
+.tl-item.done::before { background:var(--cyan); border-color:var(--cyan); }
+.tl-item .tl-num { font-family:var(--mono); font-size:0.7rem; color:var(--cyan); margin-bottom:0.3rem; }
+.tl-item h4 { font-size:1.05rem; margin-bottom:0.3rem; }
+.tl-item p { font-size:0.85rem; color:var(--text-dim); }
+
+/* ── Footer ── */
+footer { border-top:1px solid var(--border); padding:3rem 2rem; text-align:center; }
+footer p { color:var(--text-muted); font-size:0.85rem; }
+footer a { color:var(--cyan); text-decoration:none; }
+
+/* ── Scroll Reveal ── */
+.reveal { opacity:0; transform:translateY(30px); transition:opacity .8s, transform .8s; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  nav a { margin-left:1rem; font-size:0.78rem; }
+  .hero { padding:5rem 1.5rem 3rem; }
+  .features { grid-template-columns:1fr; }
+  .tech-grid { grid-template-columns:repeat(2,1fr); }
+}
+
+/* Floating particles */
+.particles { position:fixed; inset:0; pointer-events:none; z-index:0; }
+.particle { position:absolute; border-radius:50%; background:var(--cyan); opacity:0; animation:float 8s ease-in-out infinite; }
+@keyframes float { 0%{transform:translateY(0) scale(1);opacity:0} 10%{opacity:.15}
+  90%{opacity:.15} 100%{transform:translateY(-400px) scale(.3);opacity:0} }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="logo">Marine Structures AI Tutor<span>SESS3026/JEIS3005</span></div>
+    <div>
+      <a href="#architecture">Architecture</a>
+      <a href="#features">Features</a>
+      <a href="#tech">Tech Stack</a>
+      <a href="#iterations">Iterations</a>
+      <a href="https://github.com/ZSHYC/cer-rag" target="_blank">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="particles" id="particles"></div>
+  <div class="hero-content">
+    <div class="badge"><span class="dot"></span> Agentic RAG &middot; Multi-Agent System</div>
+    <h1>An <span class="gradient">AI Exam Tutor</span><br>for Marine Structures</h1>
+    <p class="subtitle">A LangGraph-powered multi-agent system with Self-RAG reflection, three-layer indexing, and knowledge graph reasoning — demonstrating the full evolution from naive RAG to production-grade agentic RAG.</p>
+    <div class="cta-row">
+      <a href="https://github.com/ZSHYC/cer-rag" target="_blank" class="btn btn-primary">View on GitHub</a>
+      <a href="#architecture" class="btn btn-outline">Explore Architecture</a>
+    </div>
+  </div>
+</section>
+
+<section id="evolution">
+  <div class="section-inner">
+    <span class="section-label">01 &middot; RAG Evolution</span>
+    <h2 class="section-title">From Naive RAG to Agentic RAG</h2>
+    <p class="section-desc">This project is not a "plug data into LangChain" demo. It traces the full RAG evolution path.</p>
+    <div class="evo-grid">
+      <div class="evo-item">
+        <div class="stage">Stage 1</div>
+        <div class="arch">Naive RAG</div>
+        <div class="innov">Dense + Sparse Hybrid<br>RRF Fusion</div>
+      </div>
+      <div class="evo-item">
+        <div class="stage">Stage 2</div>
+        <div class="arch">Advanced RAG</div>
+        <div class="innov">Cross-encoder Rerank<br>Multi-strategy Chunking</div>
+      </div>
+      <div class="evo-item">
+        <div class="stage">Stage 3</div>
+        <div class="arch"><strong>Agentic RAG</strong></div>
+        <div class="innov">Supervisor + 5 Specialist Agents<br>Self-RAG Reflection Loop</div>
+      </div>
+      <div class="evo-item">
+        <div class="stage">Stage 4</div>
+        <div class="arch">Production</div>
+        <div class="innov">FastAPI SSE + Docker<br>RAGAS Evaluation + A/B Testing</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="architecture">
+  <div class="section-inner">
+    <span class="section-label">02 &middot; System Architecture</span>
+    <h2 class="section-title">Multi-Agent Orchestration</h2>
+    <p class="section-desc">LangGraph state machine coordinates 6 specialized agents through a Supervisor pattern.</p>
+    <div class="arch-viz">
+      <div class="arch-row"><span class="arch-label">Interface</span>
+        <span class="arch-layer" style="flex:1"><span class="title">CLI (Rich) &middot; Gradio UI &middot; FastAPI SSE</span></span>
+      </div>
+      <div class="arch-row"><span class="arch-label">Agents</span>
+        <div class="agent-node supervisor"><div class="icon">🧠</div><div class="name">Supervisor</div><div class="role">Plan &amp; Route</div></div>
+        <span class="arch-arrow">→</span>
+        <div class="agent-node"><div class="icon">🔍</div><div class="name">Retrieval</div><div class="role">Search + Self-RAG</div></div>
+        <span class="arch-arrow">→</span>
+        <div class="agent-node"><div class="icon">📖</div><div class="name">Concept</div><div class="role">Explain Theory</div></div>
+        <div class="agent-node"><div class="icon">📐</div><div class="name">Calc</div><div class="role">Solve Problems</div></div>
+        <div class="agent-node"><div class="icon">📝</div><div class="name">Exam</div><div class="role">Generate &amp; Grade</div></div>
+        <div class="agent-node"><div class="icon">✅</div><div class="name">Critic</div><div class="role">Validate Output</div></div>
+      </div>
+      <div class="arch-row"><span class="arch-label">Tools</span>
+        <span class="arch-layer" style="flex:1"><span class="title">Shared Tool Layer</span>
+          <span class="items">dense_search &middot; sparse_search &middot; graph_traverse &middot; formula_lookup &middot; rerank</span></span>
+      </div>
+      <div class="arch-row"><span class="arch-label">Index</span>
+        <span class="arch-layer" style="flex:1"><span class="title">Three-Layer Indexing</span>
+          <span class="items">Dense Vectors (ChromaDB+BGE-M3) &middot; Sparse Keywords (BM25) &middot; Knowledge Graph (NetworkX)</span></span>
+      </div>
+      <div class="arch-row"><span class="arch-label">Infra</span>
+        <span class="arch-layer" style="flex:1"><span class="title">Infrastructure</span>
+          <span class="items">Docker Compose &middot; LangSmith &middot; RAGAS &middot; CI/CD</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="section-inner">
+    <span class="section-label">03 &middot; Key Features</span>
+    <h2 class="section-title">What Makes This Stand Out</h2>
+    <p class="section-desc">Every component is deliberately chosen and production-hardened.</p>
+    <div class="features">
+      <div class="feature-card reveal">
+        <div class="f-icon cyan">🤖</div>
+        <h3>6-Agent System</h3>
+        <p>Supervisor orchestrates Retrieval (with Self-RAG reflection), Concept, Calculation, Exam, and Critic agents — each specialized for its task.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="f-icon gold">🔄</div>
+        <h3>Self-RAG Reflection</h3>
+        <p>Retrieval agent evaluates result sufficiency and rewrites queries for re-retrieval — inspired by Self-RAG (Asai et al., 2023) and Corrective RAG (Yan et al., 2024).</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="f-icon cyan">🗂️</div>
+        <h3>Three-Layer Indexing</h3>
+        <p>Dense vectors (BGE-M3) + Sparse keywords (BM25) + Knowledge Graph (NetworkX, 79 nodes, 269 edges) for structured concept-formula-exam traversal.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="f-icon gold">🌐</div>
+        <h3>Cross-lingual</h3>
+        <p>BGE-M3 multilingual embeddings handle English lectures and Chinese study notes in one unified semantic space — no translation needed.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="f-icon cyan">📊</div>
+        <h3>Evaluation-driven</h3>
+        <p>RAGAS metrics (faithfulness, context precision/recall, answer relevancy) with A/B strategy comparison — data-driven, not gut-feel.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="f-icon gold">🚀</div>
+        <h3>Production-ready</h3>
+        <p>FastAPI + SSE streaming + Docker Compose one-command deployment + LangSmith observability — not a notebook, a deployable system.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="data">
+  <div class="section-inner">
+    <span class="section-label">04 &middot; Data Pipeline</span>
+    <h2 class="section-title">738 Chunks Across 5 Sources</h2>
+    <p class="section-desc">Source-aware chunking strategy — the most critical hyperparameter for retrieval quality.</p>
+    <div style="overflow-x:auto; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg);">
+      <table class="data-table">
+        <thead><tr><th>Source</th><th>Documents</th><th>Chunks</th><th>Strategy</th><th>Metadata</th></tr></thead>
+        <tbody>
+          <tr><td>Lecture Slides</td><td class="num">21 PDFs &middot; 582 pages</td><td class="num">200</td><td>3-slide merged windows</td><td>lecture_number, slide_range, topic_tags</td></tr>
+          <tr><td>Exam Papers</td><td class="num">9 years (2014–2025)</td><td class="num">25</td><td>Question-boundary split</td><td>year, question_number, marks, content_type</td></tr>
+          <tr><td>Answer Keys</td><td class="num">3 years (2022–2025)</td><td class="num">15</td><td>Sub-question paired chunks</td><td>year, question_number, sub_question</td></tr>
+          <tr><td>Seminar Solutions</td><td class="num">4 Tutorials</td><td class="num">23</td><td>Tutorial → Question hierarchical</td><td>tutorial_number, language</td></tr>
+          <tr><td>Chinese Study Notes</td><td class="num">12 Markdown files</td><td class="num">475</td><td>Markdown header-aware</td><td>file_topic, breadcrumb, language</td></tr>
+          <tr style="font-weight:700"><td>Total</td><td></td><td class="num">738</td><td colspan="2">Each chunk carries rich metadata for filtered/scoped retrieval</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="tech">
+  <div class="section-inner">
+    <span class="section-label">05 &middot; Tech Stack</span>
+    <h2 class="section-title">Every Choice Has a Reason</h2>
+    <p class="section-desc">No defaults-for-defaults'-sake. Each component selected via deliberate trade-off analysis.</p>
+    <div class="tech-grid">
+      <div class="tech-item"><div class="t-name">DeepSeek V4 Pro</div><div class="t-why">LLM — Strong Chinese+math reasoning</div></div>
+      <div class="tech-item"><div class="t-name">LangGraph</div><div class="t-why">Agent Framework — State machine multi-agent orchestration</div></div>
+      <div class="tech-item"><div class="t-name">BGE-M3</div><div class="t-why">Embedding — 1024-dim, multilingual, local & free</div></div>
+      <div class="tech-item"><div class="t-name">ChromaDB</div><div class="t-why">Vector DB — Zero-ops, metadata filtering</div></div>
+      <div class="tech-item"><div class="t-name">BM25</div><div class="t-why">Sparse Retrieval — Exact formula/term matching</div></div>
+      <div class="tech-item"><div class="t-name">BGE-Reranker-v2</div><div class="t-why">Cross-encoder precision boost</div></div>
+      <div class="tech-item"><div class="t-name">NetworkX</div><div class="t-why">Knowledge Graph — 79 nodes, 269 edges</div></div>
+      <div class="tech-item"><div class="t-name">FastAPI + SSE</div><div class="t-why">Backend — Async streaming responses</div></div>
+      <div class="tech-item"><div class="t-name">Gradio + Rich</div><div class="t-why">UI — Web interface + polished CLI</div></div>
+      <div class="tech-item"><div class="t-name">RAGAS</div><div class="t-why">Evaluation — 5 ground-truth test cases</div></div>
+      <div class="tech-item"><div class="t-name">Docker Compose</div><div class="t-why">One-command production deployment</div></div>
+      <div class="tech-item"><div class="t-name">LangSmith</div><div class="t-why">Observability — Agent call chain tracing</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="iterations">
+  <div class="section-inner">
+    <span class="section-label">06 &middot; Development Journey</span>
+    <h2 class="section-title">5 Iterations, 10 Days</h2>
+    <p class="section-desc">Each iteration builds on the last, deliberately growing complexity.</p>
+    <div class="timeline">
+      <div class="tl-item done"><div class="tl-num">ITERATION 0</div><h4>Basic RAG</h4><p>Document processing, 738 chunks, three-layer indexing (dense+sparse+KG placeholder), hybrid retrieval with RRF fusion, CLI with Rich</p></div>
+      <div class="tl-item done"><div class="tl-num">ITERATION 1</div><h4>Agentic Upgrade</h4><p>LangGraph state graph, Supervisor agent with planning+routing, Retrieval agent with Self-RAG reflection loop, Concept &amp; Calc specialist agents</p></div>
+      <div class="tl-item done"><div class="tl-num">ITERATION 2</div><h4>Knowledge Graph</h4><p>79-node, 269-edge knowledge graph (Concept↔Formula↔Lecture↔Exam), graph-traversal enhanced search, Exam Agent (generate + grade), Critic Agent (hallucination check)</p></div>
+      <div class="tl-item done"><div class="tl-num">ITERATION 3</div><h4>Productionization</h4><p>FastAPI backend with SSE streaming, Docker Compose deployment, RAGAS evaluation framework with 5 ground-truth cases, A/B strategy comparison</p></div>
+      <div class="tl-item done"><div class="tl-num">ITERATION 4</div><h4>Polish</h4><p>Gradio Web UI, comprehensive testing, bilingual README (Chinese+English), project website</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Built with LangGraph · DeepSeek V4 Pro · ChromaDB · BGE-M3 · NetworkX · FastAPI</p>
+  <p style="margin-top:0.5rem"><a href="https://github.com/ZSHYC/cer-rag" target="_blank">github.com/ZSHYC/cer-rag</a> &middot; MIT License</p>
+</footer>
+
+<script>
+// ── Scroll reveal ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ── Floating particles ──
+const container = document.getElementById('particles');
+if(container) {
+  for(let i=0; i<18; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random()*3+1;
+    p.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${60+Math.random()*40}%;animation-delay:${Math.random()*8}s;animation-duration:${6+Math.random()*10}s`;
+    container.appendChild(p);
+  }
+}
+</script>
+
+</body>
+</html>

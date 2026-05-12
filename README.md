@@ -1,7 +1,7 @@
 # Marine Structures AI Tutor · 船舶结构物 AI 导师
 
 <p align="center">
-  <b><a href="#chinese">中文版</a></b> · <a href="#english">English</a>
+  <b><a href="#chinese">中文版</a></b> · <a href="#english">English</a> · <a href="https://zshyc.github.io/cer-rag/">🌐 项目网站</a>
 </p>
 
 <p align="center">
@@ -11,6 +11,7 @@
   <img src="https://img.shields.io/badge/Embedding-BGE--M3-orange.svg" alt="BGE-M3">
   <img src="https://img.shields.io/badge/Vector%20DB-ChromaDB-red.svg" alt="ChromaDB">
   <img src="https://img.shields.io/badge/license-MIT-lightgrey.svg" alt="License">
+  <a href="https://zshyc.github.io/cer-rag/"><img src="https://img.shields.io/badge/🌐-Website-00d4ff.svg" alt="Website"></a>
 </p>
 
 ---
