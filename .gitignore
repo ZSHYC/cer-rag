@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+
+# Conda environments (but not the repo itself)
+.envrc
+
+# Data (large binary files)
+data/chroma_db/
+data/extracted/
+data/chunks/
+
+# Sensitive
+.env
+*.key
+secrets/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# OMC / tools
+.omc/
+.omx/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# PDF source files (large, hand-managed)
+课件/
+题目/
+extracted/
+船舶结构物期末复习资料/
