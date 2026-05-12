@@ -12,8 +12,8 @@
 
 <p align="center">
   <a href="https://zshyc.github.io/cer-rag/"><img src="https://img.shields.io/badge/🌐_项目网站-zshyc.github.io/Agentic-RAG-00d4ff?style=flat-square"></a>
-  <a href="https://github.com/ZSHYC/cer-rag"><img src="https://img.shields.io/github/stars/ZSHYC/cer-rag?style=flat-square&color=yellow"></a>
-  <a href="https://github.com/ZSHYC/cer-rag/commits/main"><img src="https://img.shields.io/github/last-commit/ZSHYC/cer-rag?style=flat-square&color=green"></a>
+  <a href="https://github.com/ZSHYC/cer-rag"><img src="https://img.shields.io/github/stars/ZSHYC/Agentic-RAG?style=flat-square&color=yellow"></a>
+  <a href="https://github.com/ZSHYC/cer-rag/commits/main"><img src="https://img.shields.io/github/last-commit/ZSHYC/Agentic-RAG?style=flat-square&color=green"></a>
   <img src="https://img.shields.io/badge/python-3.11+-blue?style=flat-square">
   <img src="https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square">
   <img src="https://img.shields.io/badge/tests-19/19_passed-brightgreen?style=flat-square">
