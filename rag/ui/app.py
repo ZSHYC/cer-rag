@@ -92,7 +92,7 @@ def build_ui():
 
         with gr.Row():
             with gr.Column(scale=3):
-                chatbot = gr.Chatbot(height=500, label="Conversation", type="messages")
+                chatbot = gr.Chatbot(height=500, label="Conversation")
                 with gr.Row():
                     query_box = gr.Textbox(
                         placeholder="Ask anything about Marine Structures... (English or Chinese)",
