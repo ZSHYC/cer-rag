@@ -65,13 +65,19 @@ def build_knowledge_graph(chunks_path: str = None) -> nx.Graph:
             elif st == "solution":
                 exam_questions.append(data)
 
-    # 添加考题节点
+    # 添加考题节点（去重）
+    seen_exam_nodes = set()
     for eq in exam_questions:
         meta = eq["metadata"]
-        year = meta.get("exam_year", "unknown")
+        year = meta.get("exam_year", "")
         qnum = meta.get("question_number", 0)
+        if not year or qnum == 0:
+            continue
         node_id = f"exam:{year}:Q{qnum}"
-        G.add_node(node_id, type="ExamQuestion", label=f"{year} Q{qnum}",
+        if node_id in seen_exam_nodes:
+            continue
+        seen_exam_nodes.add(node_id)
+        G.add_node(node_id, type="ExamQuestion", label=f"Exam {year} Q{qnum}",
                     year=year, question_number=qnum)
 
     # --- 建立关系 ---
