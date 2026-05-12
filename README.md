@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  📖 <a href="README_EN.md">English Version</a> · 🌐 <a href="https://zshyc.github.io/cer-rag/">项目网站</a>
+  📖 <a href="README_EN.md">English Version</a> · 🌐 <a href="https://zshyc.github.io/Agentic-RAG/">项目网站</a>
 </p>
 
 ---
