@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""Marine Structures AI Tutor — 命令行交互入口"""
+"""Marine Structures AI Tutor — Agentic RAG CLI"""
 import sys
-import os
 import pickle
 from pathlib import Path
 
@@ -15,48 +14,25 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
-from rag.config import (
-    LLM_MODEL, LLM_API_KEY, LLM_BASE_URL,
-    DENSE_K, SPARSE_K, RERANK_TOP_K, CHUNKS_DIR, MAX_CONTEXT_TOKENS,
-)
-from rag.prompts.templates import SYSTEM_PROMPT
-from rag.indexing.vector_index import load_vector_index, dense_search
-from rag.indexing.sparse_index import SparseIndex
-from rag.indexing.fusion import hybrid_search, rerank_with_cross_encoder
+from rag.config import LLM_MODEL, LLM_API_KEY, LLM_BASE_URL, CHUNKS_DIR
+from rag.graph.build_graph import build_tutor_graph, classify_query
 
 console = Console()
 
 
 def load_llm():
-    api_key = LLM_API_KEY or os.getenv("DEEPSEEK_API_KEY", "")
-    if not api_key:
-        console.print("[red]请设置 DEEPSEEK_API_KEY 环境变量[/red]")
-        sys.exit(1)
     return ChatOpenAI(
-        model=LLM_MODEL, api_key=api_key, base_url=LLM_BASE_URL,
+        model=LLM_MODEL, api_key=LLM_API_KEY, base_url=LLM_BASE_URL,
         temperature=0.3, streaming=True,
     )
-
-
-def load_sparse_index():
-    """从预构建的 pickle 文件加载 BM25"""
-    pickle_path = CHUNKS_DIR / "bm25_index.pkl"
-    if pickle_path.exists():
-        with open(pickle_path, 'rb') as f:
-            docs = pickle.load(f)
-        return SparseIndex(docs)
-    return None
 
 
 def format_source(doc) -> str:
     meta = doc.metadata
     st = meta.get("source_type", "")
     if st == "lecture":
-        lec = meta.get("lecture_number", "?")
-        sr = meta.get("slide_range") or meta.get("slide_num", "?")
-        return f"[Lecture {lec}, Slide {sr}]"
+        return f"[Lecture {meta.get('lecture_number','?')}, Slide {meta.get('slide_range') or meta.get('slide_num','?')}]"
     if st == "exam":
         return f"[Exam {meta.get('exam_year','?')} Q{meta.get('question_number','?')}]"
     if st == "solution":
@@ -68,73 +44,27 @@ def format_source(doc) -> str:
     return f"[{meta.get('source_file','?')}]"
 
 
-def build_context(docs_with_scores, max_tokens=MAX_CONTEXT_TOKENS):
-    parts = []
-    est = 0
-    for doc, score in docs_with_scores:
-        block = f"### {format_source(doc)}\n{doc.page_content}\n"
-        e = len(block) // 3
-        if est + e > max_tokens:
-            break
-        parts.append(block)
-        est += e
-    return "\n---\n".join(parts)
-
-
-def classify_query(query: str) -> str:
-    q = query.lower()
-    if any(k in q for k in ['calculate', 'compute', 'solve', 'find', 'determine', 'derive',
-                              'shape factor', 'modulus', 'buckling stress', 'stiffness',
-                              '计算', '求', '算', '求解', '推导']):
-        return "calculation"
-    if any(k in q for k in ['what is', 'describe', 'explain', 'compare', 'why', 'define',
-                              'discuss', '是什么', '解释', '说明', '区别', '为什么']):
-        return "conceptual"
-    if any(k in q for k in ['formula', 'equation', 'expression', '公式', '表达式']):
-        return "formula"
-    if any(k in q for k in ['which year', 'which exam', 'which lecture',
-                              '哪年', '哪个课件', '哪道题']):
-        return "reference"
-    return "conceptual"
-
-
 def run():
     console.print(Panel.fit(
         "[bold cyan]Marine Structures AI Tutor[/bold cyan]\n"
-        "[dim]SESS3026/JEIS3005 — Agentic RAG 考试导师[/dim]\n\n"
-        "[yellow]:q[/yellow] 退出  [yellow]:s[/yellow] 切换来源显示",
+        "[dim]SESS3026/JEIS3005 — Agentic RAG Multi-Agent System[/dim]\n\n"
+        "[yellow]:q[/yellow] Quit   [yellow]:s[/yellow] Toggle sources   [yellow]:d[/yellow] Debug mode",
         title="Welcome"
     ))
 
-    # --- Load ---
-    console.print("[dim]加载向量索引...[/dim]")
-    vs = load_vector_index()
-    console.print(f"  ChromaDB: {vs._collection.count()} 条")
+    # Load graph
+    console.print("[dim]Compiling LangGraph agent graph...[/dim]")
+    graph = build_tutor_graph()
+    console.print(f"  Nodes: {list(graph.nodes.keys())}")
 
-    console.print("[dim]加载 BM25 索引...[/dim]")
-    si = load_sparse_index()
-    if si is None:
-        console.print("[yellow]BM25 索引未找到，仅用稠密检索[/yellow]")
-    else:
-        console.print(f"  BM25: {len(si.documents)} 篇")
-
-    console.print("[dim]加载 LLM...[/dim]")
-    llm = load_llm()
+    console.print("[dim]Loading LLM...[/dim]")
     console.print(f"  Model: {LLM_MODEL}")
-
-    console.print("[dim]加载 Reranker...[/dim]")
-    reranker = None
-    try:
-        from sentence_transformers import CrossEncoder
-        reranker = CrossEncoder('BAAI/bge-reranker-v2-m3')
-        console.print("  Reranker: OK")
-    except Exception:
-        console.print("  [yellow]跳过 (加载失败)[/yellow]")
 
     console.print("\n[green]Ready![/green]\n")
 
     history = []
     show_src = True
+    debug = False
 
     while True:
         try:
@@ -150,57 +80,88 @@ def run():
             show_src = not show_src
             console.print(f"[dim]Show sources: {show_src}[/dim]")
             continue
-
-        qtype = classify_query(q)
-        console.print(f"[dim]{qtype} · searching...[/dim]")
-
-        # Search
-        def _dense(qq, k, filter_dict=None):
-            return dense_search(vs, qq, k=k, filter_dict=filter_dict)
-        def _sparse(qq, k):
-            return si.search_with_scores(qq, k=k) if si else []
-
-        fused = hybrid_search(_dense, _sparse, q, dense_k=DENSE_K, sparse_k=SPARSE_K)
-
-        if reranker and len(fused) > RERANK_TOP_K:
-            fused = rerank_with_cross_encoder(q, fused, reranker, RERANK_TOP_K)
-
-        ctx = build_context(fused)
-        if not ctx:
-            console.print("[yellow]No relevant documents found.[/yellow]")
+        if q == ":d":
+            debug = not debug
+            console.print(f"[dim]Debug mode: {debug}[/dim]")
             continue
 
-        # Generate
-        prompt = SYSTEM_PROMPT.format(context=ctx)
-        msgs = [SystemMessage(content=prompt)]
-        for h in history[-10:]:
-            msgs.append(HumanMessage(content=h["q"]))
-            msgs.append(AIMessage(content=h["a"]))
-        msgs.append(HumanMessage(content=q))
+        qtype = classify_query(q)
+        console.print(f"[dim][{qtype}][/dim] ", end="")
 
-        console.print("[bold blue]Tutor: [/bold blue]", end="")
-        full = ""
-        for chunk in llm.stream(msgs):
-            c = chunk.content if hasattr(chunk, 'content') else str(chunk)
-            console.print(c, end="")
-            full += c
-        console.print()
+        # 初始化状态
+        initial_state = {
+            "query": q,
+            "chat_history": history[-10:],
+            "query_type": qtype,
+            "retrieval_attempts": 0,
+            "retrieval_results": [],
+            "retrieval_sufficient": False,
+            "plan": [],
+            "current_step": 0,
+            "next_agent": "",
+        }
 
-        # Sources
+        # 流式执行 LangGraph
+        console.print("[dim]thinking...[/dim]")
+        final_state = None
+        try:
+            for step_output in graph.stream(initial_state, {"recursion_limit": 20}):
+                node_name = list(step_output.keys())[0]
+                node_state = step_output[node_name]
+
+                if debug:
+                    plan = node_state.get("plan", [])
+                    attempts = node_state.get("retrieval_attempts", 0)
+                    ndocs = len(node_state.get("retrieval_results", []))
+                    console.print(f"  [dim]│ [{node_name}] plan={plan[:2]} "
+                                  f"docs={ndocs} retries={attempts}[/dim]")
+
+                final_state = node_state
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            continue
+
+        if final_state is None:
+            console.print("[yellow]No response generated.[/yellow]")
+            continue
+
+        answer = final_state.get("final_answer", "")
+        if not answer:
+            answer = final_state.get("concept_answer", "") or final_state.get("calc_result", {}).get("final_value", "")
+        if not answer:
+            console.print("[yellow]No answer generated. Try a different question.[/yellow]")
+            continue
+
+        console.print(f"\n[bold blue]Tutor: [/bold blue]")
+        console.print(answer)
+
+        # 显示来源和 Agent 执行信息
         if show_src:
-            t = Table(title="Sources", show_header=True, header_style="dim",
-                      title_style="dim")
-            t.add_column("#", style="dim", width=3)
-            t.add_column("Source", style="cyan")
-            t.add_column("Preview", style="dim", max_width=80)
-            for i, (doc, _) in enumerate(fused[:5], 1):
-                pv = doc.page_content[:80].replace('\n', ' ') + "..."
-                t.add_row(str(i), format_source(doc), pv)
-            console.print(t)
+            docs = final_state.get("retrieval_results", [])
+            plan = final_state.get("plan", [])
+            attempts = final_state.get("retrieval_attempts", 0)
 
-        history.append({"q": q, "a": full})
+            console.print()
+            if plan:
+                console.print(f"[dim]Plan: {' › '.join(plan)}[/dim]")
+            if attempts > 1:
+                console.print(f"[dim]Retrieval retries: {attempts-1}[/dim]")
 
-    console.print("\n[dim]Goodbye & good luck![/dim]")
+            if docs:
+                t = Table(title=f"Sources ({len(docs)} docs)", show_header=True,
+                          header_style="dim", title_style="dim")
+                t.add_column("#", style="dim", width=3)
+                t.add_column("Source", style="cyan")
+                t.add_column("Preview", style="dim", max_width=80)
+                for i, doc in enumerate(docs[:5], 1):
+                    pv = doc.page_content[:80].replace('\n', ' ') + "..."
+                    t.add_row(str(i), format_source(doc), pv)
+                console.print(t)
+
+        console.print()
+        history.append({"query": q, "answer": answer})
+
+    console.print("\n[dim]Goodbye & good luck with your exam![/dim]")
 
 
 if __name__ == "__main__":
