@@ -453,13 +453,17 @@ rag/
 
 ## 十、开发迭代
 
-| # | 主题 | 核心交付 | 状态 |
-|---|------|---------|------|
-| 0 | 基础 RAG | 文档处理, 738 chunks, 三层索引, 混合检索, CLI | ✅ |
-| 1 | Agentic 升级 | LangGraph 多 Agent, Supervisor, Self-RAG 回路 | ✅ |
-| 2 | 知识图谱 | 79节点269边 KG, Exam/Critic Agent, 图增强搜索 | ✅ |
-| 3 | 工程化 | FastAPI SSE, Docker, RAGAS 评估, A/B 对比 | ✅ |
-| 4 | 打磨 | Gradio UI, 19项测试通过, 文档完善 | ✅ |
+这个项目按 5 次迭代逐步构建，每次迭代都有独立的技术文档，记录了设计方案、踩坑经验和测试结果：
+
+| # | 主题 | 核心交付 | 详细文档 |
+|---|------|---------|---------|
+| 0 | 基础 RAG | 文档处理、738 chunks、三层索引（稠密+稀疏+KG占位）、混合检索 RRF 融合、Rich CLI | [📄 ITERATION_0.md](rag/ITERATION_0.md) |
+| 1 | Agentic 升级 | LangGraph 状态图、Supervisor Agent 规划+路由、Retrieval Agent Self-RAG 自省回路、Concept/Calc 专业 Agent | [📄 ITERATION_1.md](rag/ITERATION_1.md) |
+| 2 | 知识图谱 | 79节点269边 KG（概念↔公式↔课件↔考题）、图游走增强搜索、Exam Agent 出题+批改、Critic Agent 幻觉检测 | [📄 ITERATION_2.md](rag/ITERATION_2.md) |
+| 3 | 工程化 | FastAPI + SSE 流式后端、Docker Compose 一键部署、RAGAS 评估体系（5道ground truth）、A/B 策略对比 | [📄 ITERATION_3.md](rag/ITERATION_3.md) |
+| 4 | 打磨 | Gradio Web UI、19项全面测试通过、中英双语文档、项目网站 | [📄 ITERATION_4.md](rag/ITERATION_4.md) |
+
+每篇迭代文档包含：技术决策理由、踩过的坑及解法、完整测试结果、新增文件清单。 |
 
 ---
 

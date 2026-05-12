@@ -390,13 +390,17 @@ Across 9 years of exams, at least **3 different question marking formats** exist
 
 ## 9. Development Roadmap
 
-| # | Focus | Key Output | Status |
-|---|-------|------------|--------|
-| 0 | Basic RAG | Doc processing, 738 chunks, hybrid retrieval, CLI | ✅ |
-| 1 | Agentic Upgrade | LangGraph multi-agent, Supervisor, Self-RAG loop | ✅ |
-| 2 | Knowledge Graph | 79-node KG, Exam/Critic agents, KG-enhanced search | ✅ |
-| 3 | Productionization | FastAPI SSE, Docker, RAGAS evaluation, A/B testing | ✅ |
-| 4 | Polish | Gradio UI, 19/19 tests passed, bilingual docs | ✅ |
+This project was built over 5 deliberate iterations, each with its own technical document covering design rationale, debugging experiences, and test results:
+
+| # | Focus | Key Output | Full Report |
+|---|-------|------------|-------------|
+| 0 | Basic RAG | Document processing, 738 chunks, 3-layer indexing (dense+sparse+KG placeholder), hybrid RRF retrieval, Rich CLI | [📄 ITERATION_0.md](rag/ITERATION_0.md) |
+| 1 | Agentic Upgrade | LangGraph state graph, Supervisor Agent (planning+routing), Retrieval Agent Self-RAG reflection loop, Concept & Calc specialist agents | [📄 ITERATION_1.md](rag/ITERATION_1.md) |
+| 2 | Knowledge Graph | 79-node 269-edge KG (Concept↔Formula↔Lecture↔Exam), graph-traversal enhanced search, Exam Agent (generate+grade), Critic Agent (hallucination detection) | [📄 ITERATION_2.md](rag/ITERATION_2.md) |
+| 3 | Productionization | FastAPI + SSE streaming backend, Docker Compose one-command deploy, RAGAS evaluation (5 ground-truth cases), A/B strategy comparison | [📄 ITERATION_3.md](rag/ITERATION_3.md) |
+| 4 | Polish | Gradio Web UI, 19/19 comprehensive tests passed, bilingual documentation, project website | [📄 ITERATION_4.md](rag/ITERATION_4.md) |
+
+Each iteration doc includes: design rationale, pitfalls encountered and their solutions, complete test results, and a new-file manifest.
 
 ---
 
